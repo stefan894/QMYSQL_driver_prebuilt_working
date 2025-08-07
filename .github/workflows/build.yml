@@ -5,20 +5,19 @@ on:
     branches: [qt6]
 
 env:
-  QT: 6.6.3
+  QT: 5.15.2
 
 jobs:
   linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.12'
       - name: install dep
         run: |
             sudo apt-get update
-            sudo apt-get dist-upgrade
             sudo apt-get install libmariadb-dev cmake
       - name: install qt
         run: |
@@ -37,106 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Linux
-          path: ${{ github.workspace }}/qtbase/src/plugins/sqldrivers/mariadb_driver/
-  w64_msvc2019:
-    if: false
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: win64
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-      - name: install qt
-        run: |
-          pip install aqtinstall
-          python3 -m aqt install-qt -O ${{ github.workspace }}/Qt/ windows desktop ${{env.QT}} win64_msvc2019_64
-          echo "${{ github.workspace }}/Qt/${{env.QT}}/msvc2019_64/bin/" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      - name: mariadb
-        shell: bash
-        run: |
-          choco install -y git cmake
-          choco install -y mariadb --version=10.6.4
-      - name: build
-        shell: cmd
-        run: |
-          build_qsql.bat ${{env.QT}}
-      - name: mariadb
-        shell: bash
-        run: |
-          cd qtbase/src/plugins/sqldrivers/
-          mkdir -p mariadb_driver/plugins/sqldrivers
-          cp plugins/sqldrivers/qsqlmysql*.dll mariadb_driver/plugins/sqldrivers
-          cp "C:/Program Files/MariaDB 10.6/lib/libmariadb.dll" mariadb_driver/
-      - name: Windows artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows_2019
-          path: ${{ github.workspace }}/qtbase/src/plugins/sqldrivers/mariadb_driver/
-  w64_mingw:
-    if: false
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-      - name: install qt
-        run: |
-          pip install aqtinstall
-          python3 -m aqt install-qt -O ${{ github.workspace }}/Qt/ windows desktop ${{env.QT}} win64_mingw81
-          echo "${{ github.workspace }}/Qt/${{env.QT}}/mingw81_64/bin/" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          aqt install-tool windows desktop -O ${{ github.workspace }}/Qt/ tools_mingw qt.tools.win64_mingw810
-          echo "${{ github.workspace }}/Qt/Tools/mingw810_64/bin/" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      - name: mariadb
-        shell: bash
-        run: |
-          choco install -y git cmake
-          choco install -y mariadb --version=10.6.4
-      - name: build
-        shell: cmd
-        run: |
-          build_qsql_mingw.bat ${{env.QT}}
-      - name: mariadb
-        shell: bash
-        run: |
-          cd qtbase/src/plugins/sqldrivers/
-          mkdir -p mariadb_driver/plugins/sqldrivers
-          cp plugins/sqldrivers/qsqlmysql*.dll mariadb_driver/plugins/sqldrivers
-          cp "C:/Program Files/MariaDB 10.6/lib/libmariadb.dll" mariadb_driver/
-      - name: Windows artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows_Mingw
-          path: ${{ github.workspace }}/qtbase/src/plugins/sqldrivers/mariadb_driver/
-  macos:
-    if: false
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-      - name: install qt
-        run: |
-          pip install aqtinstall
-          python3 -m aqt install-qt -O ${{ github.workspace }}/Qt/ mac desktop ${{env.QT}}
-          echo "${{ github.workspace }}/Qt/${{env.QT}}/macos/bin/" >> $GITHUB_PATH
-          export PATH=$PATH:"${{ github.workspace }}/Qt/${{env.QT}}/clang_64/bin/"
-          brew update
-          brew upgrade
-          brew install boost traildb/judy/judy
-          brew install mariadb-connector-c cmake
-          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/
-          QT_DIR=${{ github.workspace }}/Qt/${{ env.QT }} ./build_qsql.sh ${{env.QT}} mac
-          cd ${{ github.workspace }}/qtbase/src/plugins/sqldrivers/
-          mkdir -p mariadb_driver/plugins/sqldrivers
-          cp plugins/sqldrivers/libqsqlmysql.dylib mariadb_driver/plugins/sqldrivers
-          cp /usr/local/lib/libmariadb.dylib mariadb_driver/
-      - name: Mac artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: MacOS
           path: ${{ github.workspace }}/qtbase/src/plugins/sqldrivers/mariadb_driver/
